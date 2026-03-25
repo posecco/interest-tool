@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>每月 1% 利息累積試算</title>
+  <style>
+    :root{
+      --bg:#0f172a;           /* slate-900 */
+      --card:#111827;         /* gray-900 */
+      --muted:#94a3b8;        /* slate-400 */
+      --text:#e5e7eb;         /* gray-200 */
+      --accent:#22c55e;       /* green-500 */
+      --accent-2:#60a5fa;     /* blue-400 */
+      --border:#1f2937;       /* gray-800 */
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:linear-gradient(180deg,#020617, #0b1220 40%, #020617);
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Noto Sans, Helvetica, Arial;
+    }
+    .container{
+      max-width:1100px; margin:40px auto; padding:0 16px;
+    }
+    .header{
+      display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px;
+    }
+    .title{
+      font-size:28px; font-weight:700; letter-spacing:0.3px;
+    }
+    .subtitle{ color:var(--muted); font-size:13px; }
+
+    .card{
+      background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.0));
+      border:1px solid var(--border);
+      border-radius:16px; padding:16px; box-shadow:0 10px 30px rgba(0,0,0,0.35);
+    }
+
+    .grid{
+      display:grid; grid-template-columns:repeat(12,1fr); gap:12px;
+    }
+    .field{ grid-column:span 6; }
+    .field.sm{ grid-column:span 3; }
+    .field.full{ grid-column:span 12; }
+
+    label{ display:block; font-size:12px; color:var(--muted); margin-bottom:6px; }
+    input{
+      width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+      background:#020617; color:var(--text); outline:none;
+    }
+    input:focus{ border-color:var(--accent-2); box-shadow:0 0 0 2px rgba(96,165,250,0.2); }
+
+    .row-inline{ display:flex; gap:8px; align-items:center; }
+    .row-inline input{ width:auto; }
+
+    .actions{ display:flex; gap:10px; margin-top:12px; }
+    button{
+      border:1px solid var(--border);
+      background:linear-gradient(180deg, rgba(34,197,94,0.15), rgba(34,197,94,0.05));
+      color:#dcfce7; padding:10px 16px; border-radius:12px; cursor:pointer;
+      font-weight:600; letter-spacing:0.3px;
+    }
+    button.secondary{
+      background:transparent; color:var(--text);
+    }
+    button:hover{ transform:translateY(-1px); box-shadow:0 8px 20px rgba(34,197,94,0.15); }
+
+    .table-wrap{ margin-top:16px; overflow:auto; }
+    table{
+      width:100%; border-collapse:separate; border-spacing:0; font-size:14px;
+      border:1px solid var(--border); border-radius:14px; overflow:hidden;
+    }
+    thead th{
+      position:sticky; top:0; z-index:1;
+      background:#020617; color:#cbd5f5; text-align:right; padding:10px; border-bottom:1px solid var(--border);
+    }
+    thead th:first-child{ text-align:center; }
+    tbody td{
+      padding:10px; border-bottom:1px solid var(--border); text-align:right;
+    }
+    tbody tr:nth-child(odd){ background:rgba(255,255,255,0.02); }
+    tbody tr:hover{ background:rgba(96,165,250,0.08); }
+    tbody td:first-child{ text-align:center; }
+
+    .badge{
+      display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px;
+      border:1px solid var(--border); color:#bbf7d0; background:rgba(34,197,94,0.12);
+    }
+    .note{ color:var(--muted); font-size:12px; margin-top:6px; }
+
+    .footer{ margin-top:14px; display:flex; justify-content:space-between; align-items:center; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <div>
+      <div class="title">每月 1% 複利累積試算</div>
+      <div class="subtitle">利息累積滿 10 萬即併入本金持續滾動</div>
+    </div>
+    <div class="badge">Demo</div>
+  </div>
+
+  <div class="card">
+    <div class="grid">
+      <div class="field">
+        <label>初始本金</label>
+        <input type="number" id="principalInput" value="1100000" step="10000" />
+      </div>
+
+      <div class="field">
+        <label>每月利率（固定）</label>
+        <input type="text" value="1%" disabled />
+      </div>
+
+      <div class="field sm">
+        <label>起始年</label>
+        <input type="number" id="yearInput" value="2026" />
+      </div>
+      <div class="field sm">
+        <label>起始月</label>
+        <input type="number" id="monthInput" value="11" min="1" max="12" />
+      </div>
+
+      <div class="field sm">
+        <label>加碼年</label>
+        <input type="number" id="extraYear" value="2027" />
+      </div>
+      <div class="field sm">
+        <label>加碼月</label>
+        <input type="number" id="extraMonth" value="1" min="1" max="12" />
+      </div>
+      <div class="field">
+        <label>指定投入金額</label>
+        <input type="number" id="extraAmount" value="100000" step="10000" />
+      </div>
+
+      <div class="field full">
+        <div class="note">規則：每月依「當前本金 × 1%」計息；利息累積滿 100,000 立即併入本金。</div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button onclick="run()">開始計算</button>
+      <button class="secondary" onclick="resetTable()">清空</button>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table id="result" style="display:none;">
+      <thead>
+        <tr>
+          <th>次數</th>
+          <th>本次花費（月）</th>
+          <th>累計（月）</th>
+          <th>累滿日期</th>
+          <th>投入後本金</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <div class="footer">
+    <div class="note">提示：若加碼年月落在區間內，將於該月生效（僅一次）。</div>
+    <div class="note">最多顯示 50 次累滿結果</div>
+  </div>
+</div>
+
+<script>
+function resetTable(){
+  const tbody = document.querySelector('#result tbody');
+  tbody.innerHTML='';
+  document.getElementById('result').style.display='none';
+}
+
+function run() {
+  const year = Number(document.getElementById('yearInput').value);
+  const monthInput = Number(document.getElementById('monthInput').value);
+  const startDate = new Date(year, monthInput - 1, 1);
+
+  const extraYear = Number(document.getElementById('extraYear').value);
+  const extraMonth = Number(document.getElementById('extraMonth').value);
+  const extraAmount = Number(document.getElementById('extraAmount').value) || 0;
+
+  let principal = Number(document.getElementById('principalInput').value) || 0;
+  const rate = 0.01;
+  const target = 100000;
+
+  let interestPool = 0;
+  let month = 0;
+  let round = 0;
+
+  const tbody = document.querySelector('#result tbody');
+  tbody.innerHTML = '';
+
+  let extraInjected = false;
+
+  while (round < 50) {
+    let startMonth = month;
+
+    while (interestPool < target) {
+      month++;
+
+      const currentDate = new Date(startDate);
+      currentDate.setMonth(startDate.getMonth() + month);
+
+      // 指定投入（只執行一次）
+      if (!extraInjected && 
+          currentDate.getFullYear() === extraYear && 
+          currentDate.getMonth() + 1 === extraMonth) {
+        principal += extraAmount;
+        extraInjected = true;
+      }
+
+      interestPool += principal * rate;
+    }
+
+    round++;
+    interestPool -= target;
+    principal += target;
+
+    const reachedDate = new Date(startDate);
+    reachedDate.setMonth(startDate.getMonth() + month);
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${round}</td>
+      <td>${month - startMonth}</td>
+      <td>${month}</td>
+      <td>${reachedDate.getFullYear()}/${String(reachedDate.getMonth() + 1).padStart(2, '0')}</td>
+      <td>${principal.toLocaleString()}</td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  document.getElementById('result').style.display = '';
+}
+</script>
+
+</body>
+</html>
