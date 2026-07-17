@@ -107,7 +107,13 @@
     <div class="grid">
       <div class="field">
         <label>初始本金</label>
-        <input type="number" id="principalInput" value="1100000" step="10000" />
+        <div class="row-inline">
+          <input type="number" id="principalInput" value="1100000" step="10000" style="flex:1;" />
+          <select id="principalUnit" style="width:80px; padding:10px; border-radius:10px; border:1px solid var(--border); background:#020617; color:var(--text);" onchange="updateStep('principalInput','principalUnit')">
+            <option value="10000" selected>萬</option>
+            <option value="100000">十萬</option>
+          </select>
+        </div>
       </div>
 
       <div class="field">
@@ -115,30 +121,53 @@
         <input type="text" value="1%" disabled />
       </div>
 
+      <div class="field full">
+        <label>目前已累積利息（尚未併入本金的部分）</label>
+        <div class="row-inline">
+          <input type="number" id="existingInterestInput" value="0" step="1000" style="flex:1;" />
+          <select id="existingInterestUnit" style="width:80px; padding:10px; border-radius:10px; border:1px solid var(--border); background:#020617; color:var(--text);" onchange="updateStep('existingInterestInput','existingInterestUnit')">
+            <option value="1000" selected>千</option>
+            <option value="10000">萬</option>
+            <option value="100000">十萬</option>
+          </select>
+        </div>
+      </div>
+
       <div class="field sm">
-        <label>起始年</label>
-        <select id="yearInput"></select>
+        <label>投入年</label>
+        <input type="number" id="yearInput" value="2026" oninput="updateCalcMonth()" />
       </div>
       <div class="field sm">
-        <label>起始月</label>
-        <select id="monthInput"></select>
+        <label>投入月</label>
+        <input type="number" id="monthInput" value="11" min="1" max="12" oninput="updateCalcMonth()" />
       </div>
+      <div class="field sm">
+        <label>起算月（自動：投入月 +1）</label>
+        <input type="text" id="calcMonthInput" disabled />
+      </div>
+      <div class="field sm" style="visibility:hidden;" aria-hidden="true"></div>
 
       <div class="field sm">
         <label>加碼年</label>
-        <select id="extraYear"></select>
+        <input type="number" id="extraYear" value="2027" />
       </div>
       <div class="field sm">
         <label>加碼月</label>
-        <select id="extraMonth"></select>
+        <input type="number" id="extraMonth" value="1" min="1" max="12" />
       </div>
       <div class="field">
         <label>指定投入金額</label>
-        <input type="number" id="extraAmount" value="100000" step="10000" />
+        <div class="row-inline">
+          <input type="number" id="extraAmount" value="100000" step="10000" style="flex:1;" />
+          <select id="extraAmountUnit" style="width:80px; padding:10px; border-radius:10px; border:1px solid var(--border); background:#020617; color:var(--text);" onchange="updateStep('extraAmount','extraAmountUnit')">
+            <option value="10000" selected>萬</option>
+            <option value="100000">十萬</option>
+          </select>
+        </div>
       </div>
 
       <div class="field full">
-        <div class="note">規則：每月依「當前本金 × 1%」計息；利息累積滿 100,000 立即併入本金。</div>
+        <div class="note">規則：每月依「當前本金 × 1%」計息；利息累積滿 100,000 立即併入本金。第一筆利息從「起算月」（投入月的下個月）開始計算。「目前已累積利息」可用來從你實際進度接續試算（例如已經累積了 3 萬多元利息，尚未滿 10 萬）。</div>
       </div>
     </div>
 
@@ -170,44 +199,30 @@
 </div>
 
 <script>
-// 初始化下拉選單
-function initSelects() {
-  const yearSelects = ['yearInput', 'extraYear'];
-  const monthSelects = ['monthInput', 'extraMonth'];
-
-  yearSelects.forEach(id => {
-    const el = document.getElementById(id);
-    for (let y = 2020; y <= 2040; y++) {
-      const opt = document.createElement('option');
-      opt.value = y;
-      opt.textContent = y;
-      el.appendChild(opt);
-    }
-  });
-
-  monthSelects.forEach(id => {
-    const el = document.getElementById(id);
-    for (let m = 1; m <= 12; m++) {
-      const opt = document.createElement('option');
-      opt.value = m;
-      opt.textContent = m;
-      el.appendChild(opt);
-    }
-  });
-
-  // 預設值
-  document.getElementById('yearInput').value = 2026;
-  document.getElementById('monthInput').value = 11;
-  document.getElementById('extraYear').value = 2027;
-  document.getElementById('extraMonth').value = 1;
+function updateStep(inputId, selectId){
+  const step = Number(document.getElementById(selectId).value);
+  document.getElementById(inputId).step = step;
 }
 
-initSelects();
 function resetTable(){
   const tbody = document.querySelector('#result tbody');
   tbody.innerHTML='';
   document.getElementById('result').style.display='none';
 }
+
+function updateCalcMonth(){
+  const year = Number(document.getElementById('yearInput').value);
+  const monthInput = Number(document.getElementById('monthInput').value);
+  const startDate = new Date(year, monthInput - 1, 1);
+  const calcDate = new Date(startDate);
+  calcDate.setMonth(startDate.getMonth() + 1);
+
+  document.getElementById('calcMonthInput').value =
+    `${calcDate.getFullYear()}/${String(calcDate.getMonth() + 1).padStart(2, '0')}`;
+}
+
+// 頁面載入時先計算一次
+updateCalcMonth();
 
 function run() {
   const year = Number(document.getElementById('yearInput').value);
@@ -222,7 +237,7 @@ function run() {
   const rate = 0.01;
   const target = 100000;
 
-  let interestPool = 0;
+  let interestPool = Number(document.getElementById('existingInterestInput').value) || 0;
   let month = 0;
   let round = 0;
 
